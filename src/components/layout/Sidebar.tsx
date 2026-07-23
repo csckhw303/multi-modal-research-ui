@@ -1,9 +1,14 @@
 "use client";
 
-import { UserButton } from "@clerk/nextjs";
 import { Plus, Briefcase, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import dynamic from "next/dynamic";
+
+const UserButton = dynamic(
+  () => import("@clerk/nextjs").then((mod) => mod.UserButton),
+  { ssr: false }
+);
 
 export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);

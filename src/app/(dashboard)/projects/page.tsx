@@ -7,11 +7,19 @@ import { CreateProjectModal } from "@/components/projects/CreateProjectModal";
 import {LoadingSpinner} from "@/components/ui/LoadingSpinner";
 import toast from "react-hot-toast";
 import { apiClient } from "@/lib/api";
-import { get } from "https";
+
+interface Project {
+  id: string;
+  name: string;
+  description: string;
+  createdAt: string;
+  clerk_id  : string;
+}
+
 
 const ProjectsPage: React.FC = () => {
-  const [projects, setProjects] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null); // This line is fine as it is, no change needed
   // UI state
   const [searchQuery, setSearchQuery] = useState("");
@@ -93,10 +101,18 @@ const ProjectsPage: React.FC = () => {
      loadProjects();
     }
   },[userId])
+
+  const filteredProjects = projects.filter(project =>
+    project.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  if(loading)
+    return <LoadingSpinner message="Loading projects..." />;
+  
   return (
     <div >
      <ProjectsGrid
-       projects={projects}
+       projects={filteredProjects}
        loading={loading}
        error={error ? error.message : null}
        searchQuery={searchQuery}

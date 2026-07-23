@@ -1,4 +1,6 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/"; // Replace with your actual API base URL
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000").replace(/\/$/, ""); // Replace with your actual API base URL
+
+const buildUrl = (endpoint: string) => `${API_BASE_URL}/${endpoint.replace(/^\//, "")}`;
 
 export const apiClient = {
    get: async (endpoint:string, token?:string | null) => {
@@ -6,7 +8,7 @@ export const apiClient = {
         if(token) {
             headers["Authorization"] = `Bearer ${token}`;
         }
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        const response = await fetch(buildUrl(endpoint), {
             headers
         });
         if(!response.ok) {
@@ -23,7 +25,7 @@ export const apiClient = {
            if (token) {
               headers["Authorization"] = `Bearer ${token}`;
            }
-           const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+           const response = await fetch(buildUrl(endpoint), {
                method: "POST",
                headers,
                body: JSON.stringify(data)
@@ -39,7 +41,7 @@ export const apiClient = {
         if (token){
             headers["Authorization"] = `Bearer ${token}`;
         }
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        const response = await fetch(buildUrl(endpoint), {
             method: "DELETE",
             headers
         });
