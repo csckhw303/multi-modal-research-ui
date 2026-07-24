@@ -113,15 +113,69 @@ const ProjectPage = ({params}: {params: Promise<{projectId: string}>}) => {
 
   //   Document-related methods
   const handleDocumentUpload = async (files: File[]) => {
-    console.log("Upload files", files);
-  };
+      if(!userId) return;
+      const token = await getToken();
+      const uploadedDocuments: ProjectDocument[] = [];
+
+      const uploadPromises = files.map(async (file) => {
+        try {
+  
+            console.log(`file ${file}`)
+            // not updaload all file at 
+            // this moment. So it need to pass part of the file information.
+            const uploadUrlResponse = await apiClient.post(`api/projects/${projectId}/files/upload-url`, 
+            { filename: file.name, file_size: file.size, file_type: file.type }, token);
+             
+            const { upload_url, s3_key} = uploadUrlResponse.data;
+            console.log(`uploadUrl: ${upload_url}, s3_key: ${s3_key}`)
+
+            await apiClient.uploadToS3(upload_url, file);
+
+            //step 3: Confirm upload to the server (update status & backend process)
+            const updatedDocument = await apiClient.post(`api/projects/${projectId}/files/confirm-upload`, 
+            { s3_key }, token);
+
+            uploadedDocuments.push(updatedDocument.data);
+
+        } catch (error: any) {
+           toast.error(`Failed to upload document: ${error.message || error}`);
+        }
+      });
+      
+      await Promise.all(uploadPromises);
+    
+      if (uploadedDocuments.length > 0){
+        setData((prev) => {
+          return {
+            ...prev,
+            documents: [...uploadedDocuments, ...prev.documents]
+          }
+        })
+        toast.success("Documents uploaded successfully");
+      }
+  }
 
   const handleDocumentDelete = async (documentId: string) => {
     console.log("Document Deleted");
   };
 
   const handleUrlAdd = async (url: string) => {
-    console.log("Add URL", url);
+    if(!userId) return;
+
+    try {
+          const token = await getToken();
+          const response = await apiClient.post(`api/projects/${projectId}/urls`, { url }, token);
+          const newDocument = response.data;
+
+          setData((prev) => ({
+            ...prev,
+            documents: [newDocument, ...prev.documents]
+          }));
+          
+          toast.success("Website URL added successfully");
+      } catch (err) {
+          toast.error("Failed to add website URL");
+      }   
   };
 
   const handleOpenDocument = (documentId: string) => {
@@ -132,15 +186,42 @@ const ProjectPage = ({params}: {params: Promise<{projectId: string}>}) => {
   // Project settings
 
   const handleDraftSettings = (updates: any) => {
-    console.log("Update local state with draft settings", updates);
+    setData((prev) => {
+      if(!prev.settings){
+         console.warn("no previous settings found. can not update")
+         return prev; // Return previous state if no settings exist
+      }
+      return {
+        ...prev,
+        settings: {...prev.settings, ...updates}
+      };
+    });
   };
 
   const handlePublishSettings = async () => {
-    console.log("Make API call to publish settings");
+    if(!userId || !data.settings) {
+      toast.error("Cannot publish settings: missing user or settings");
+      return; // Add return here to prevent further execution if conditions are not met
+    }
+    try {
+      const token = await getToken();
+      const updatedSettings = await apiClient.put(`/api/projects/${projectId}/settings`, data.settings, token);
+
+      setData((prev) => ({
+        ...prev,
+        settings: updatedSettings.data
+      }));  
+      toast.success("Settings published successfully");
+
+    } catch (err) {
+      console.error("Failed to publish settings", err);   
+      toast.error("Failed to publish settings");
+    }
   };
 
   if(loading) return <LoadingSpinner message="Loading projects..." />;
-  if(!data.project) {
+  const { project } = data;
+  if(!project) {
     return <NotFound message="Project not found" />
   }
   const selectedDocument = selectedDocumentId
@@ -150,7 +231,7 @@ const ProjectPage = ({params}: {params: Promise<{projectId: string}>}) => {
     <>
       <div className="flex h-screen bg-[#0d1117] gap-4 p-4">
         <ConversationsList
-          project={data.project}
+          project={project}
           conversations={data.chats}
           error={error}
           loading={isCreatingChat}

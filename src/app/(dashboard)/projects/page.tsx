@@ -96,6 +96,7 @@ const ProjectsPage: React.FC = () => {
   const handleCloseModal = () => {
     setShowCreateModal(false);
   }
+  
   useEffect(( )=> {
     if (userId) {
      loadProjects();

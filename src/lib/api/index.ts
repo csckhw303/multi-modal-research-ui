@@ -36,6 +36,24 @@ export const apiClient = {
            }
            return response.json();     
    },
+   put: async (endpoint: string, data: any, token?: string| null) => {
+           const headers: HeadersInit = {
+              "Content-Type": "application/json"
+           };
+           if (token) {
+              headers["Authorization"] = `Bearer ${token}`;
+           }
+           const response = await fetch(buildUrl(endpoint), {
+               method: "PUT",
+               headers,
+               body: JSON.stringify(data)
+           });
+           if(!response.ok) {
+               console.error(`${response.status} - ${response.statusText}`, response);
+               throw new Error(`API request failed with status ${response.status}`);
+           }
+           return response.json();     
+   },
    delete: async (endpoint:string, token?: string| null) => {
         const headers: HeadersInit ={}
         if (token){
@@ -51,5 +69,16 @@ export const apiClient = {
             throw new Error(`API request failed with status ${response.status}`);
         }
         return response.json();
+   },
+   uploadToS3: async (uploadUrl: string, file: File) => {
+       const response = await fetch(uploadUrl, {
+           method: "PUT",
+           body: file
+       });
+       if(!response.ok) {
+           console.error(`${response.status} - ${response.statusText}`, response);
+           throw new Error(`S3 upload failed with status ${response.status}`);
+       }
+       return response;
    }
-}
+};
