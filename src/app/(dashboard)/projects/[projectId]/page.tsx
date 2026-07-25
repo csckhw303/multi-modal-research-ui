@@ -10,6 +10,7 @@ import { NotFound } from "@/components/ui/NotFound";
 import { toast } from "react-hot-toast";
 import { Project } from "next/dist/build/swc/types";
 import { Chat, ProjectDocument, ProjectSettings } from "@/lib/types";
+import {useRouter} from "next/navigation";
 
 interface ProjectData {
     project: Project | null;
@@ -20,6 +21,7 @@ interface ProjectData {
 
 
 const ProjectPage = ({params}: {params: Promise<{projectId: string}>}) => {
+  const router = useRouter();
   const { projectId } = use(params);
   const { getToken, userId } = useAuth();
   const [activeTab, setActiveTab] = useState<"documents"|"settings">("documents");
@@ -65,7 +67,29 @@ const ProjectPage = ({params}: {params: Promise<{projectId: string}>}) => {
     loadAllData();
   },[userId, projectId])           
    
+  useEffect(() => {
+    const hasProcessingDocuments = data.documents.some(doc =>
+      doc.processing_status && !["completed","failed"].includes(doc.processing_status)
+    );
+    if (!hasProcessingDocuments) 
+        return;
 
+    const pollInterval = setInterval(async () => {
+        try{
+          const token = await getToken();
+          const documentsRes = await apiClient.get(`/api/projects/${projectId}/files`, token);
+          setData((prev) => ({
+            ...prev,
+            documents: documentsRes.data
+          }));
+
+        } catch (err) {
+          console.error("Error polling processing documents:", err);
+        }
+    }, 5000); // Poll every 5 seconds
+    return () => clearInterval(pollInterval); // Cleanup on unmount or when dependencies change
+  }, [data.documents,projectId,getToken]);
+  
   //   Chat-related methods
   const handleCreateNewChat = async () => {
      if(!userId) return ;
@@ -108,7 +132,7 @@ const ProjectPage = ({params}: {params: Promise<{projectId: string}>}) => {
   };
 
   const handleChatClick = (chatId: string) => {
-    console.log("Navigate to chat:", chatId);
+    router.push(`/projects/${projectId}/chats/${chatId}`);
   };
 
   //   Document-related methods
@@ -156,7 +180,20 @@ const ProjectPage = ({params}: {params: Promise<{projectId: string}>}) => {
   }
 
   const handleDocumentDelete = async (documentId: string) => {
-    console.log("Document Deleted");
+    if(!userId) return;
+    try {
+      const token = await getToken();
+      const response = await apiClient.delete(`/api/projects/${projectId}/files/${documentId}`, token);
+      if(response.data){
+        setData((prev) => ({
+          ...prev,
+          documents: prev.documents.filter((doc) => doc.id !== documentId)
+        }));
+        toast.success("Document deleted successfully");
+      }
+    } catch (err) {
+      toast.error("Failed to delete document");
+    }
   };
 
   const handleUrlAdd = async (url: string) => {
