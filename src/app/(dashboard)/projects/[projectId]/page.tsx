@@ -96,11 +96,15 @@ const ProjectPage = ({params}: {params: Promise<{projectId: string}>}) => {
      try{
         setIsCreatingChat(true);
         const token = await getToken();
+        const chatNumber = Date.now() % 1000; // Generate a chat number between 0 and 999
         const response = await apiClient.post(`/api/chats`, {
           project_id: projectId,
-          title: "New Chat"
+          title: `New Chat ${chatNumber}`
         }, token);
+
         if(response.data){
+          const chatId = response.data.id;
+          router.push(`/projects/${projectId}/chats/${chatId}`);
           setData((prev) => ({
             ...prev,
             chats: [response.data, ...prev.chats]
