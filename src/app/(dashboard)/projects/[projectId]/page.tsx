@@ -97,7 +97,7 @@ const ProjectPage = ({params}: {params: Promise<{projectId: string}>}) => {
         setIsCreatingChat(true);
         const token = await getToken();
         const chatNumber = Date.now() % 1000; // Generate a chat number between 0 and 999
-        const response = await apiClient.post(`/api/chats`, {
+        const response = await apiClient.post(`/api/chats/`, {
           project_id: projectId,
           title: `New Chat ${chatNumber}`
         }, token);
@@ -160,7 +160,7 @@ const ProjectPage = ({params}: {params: Promise<{projectId: string}>}) => {
             await apiClient.uploadToS3(upload_url, file);
 
             //step 3: Confirm upload to the server (update status & backend process)
-            const updatedDocument = await apiClient.post(`api/projects/${projectId}/files/confirm-upload`, 
+            const updatedDocument = await apiClient.post(`api/projects/${projectId}/files/confirm`,
             { s3_key }, token);
 
             uploadedDocuments.push(updatedDocument.data);

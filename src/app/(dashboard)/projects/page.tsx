@@ -36,7 +36,7 @@ const ProjectsPage: React.FC = () => {
         setLoading(true);
         setError(null);
         const token = await getToken();
-        const result = await apiClient.get("api/projects", token)
+        const result = await apiClient.get("api/projects/", token)
         const {data} = result || {}
 
         console.log(data, "project list")
@@ -58,7 +58,7 @@ const ProjectsPage: React.FC = () => {
         setError(null);
         setIsCreating(true);
         const token = await getToken();
-        const result = await apiClient.post("api/projects", { name, description }, token);
+        const result = await apiClient.post("api/projects/", { name, description }, token);
         const savedProject = result?.data || {}
         setProjects((prevProjects) => [savedProject, ...prevProjects]);
         setShowCreateModal(false);
