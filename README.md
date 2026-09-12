@@ -1,36 +1,58 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Multi-Modal Research — Client
 
-## Getting Started
+Next.js frontend for the multi-modal research tool. A user creates a project to
+act as a research domain, uploads the documents (or source URLs to scrape —
+currently unavailable, the backend's ScrapingBee API key has expired) they want
+to gather information from, and then chats with that project to research over its contents — every answer comes with
+citations back to the source material.
 
-First, run the development server:
+## Stack
+
+- Next.js 16 (App Router), React 19, TypeScript
+- Tailwind CSS
+- Clerk (`@clerk/nextjs`) for authentication
+- `react-dropzone` for file uploads, `react-hot-toast` for notifications
+
+## Pages
+
+- `(auth)/sign-in`, `(auth)/sign-up` — Clerk auth flows
+- `(dashboard)/projects` — project list
+- `(dashboard)/projects/[projectId]` — project detail: upload documents, inspect
+  ingestion pipeline status per file
+- `(dashboard)/projects/[projectId]/chats/[chatId]` — chat interface with citations
+
+## Setup
 
 ```bash
+cd client
+npm install
+cp .env.example .env.local   # fill in the values below
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Runs at `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Environment variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Variable | Purpose |
+|---|---|
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk public key (browser-side) |
+| `CLERK_SECRET_KEY` | Clerk secret key (server-side, used by Next.js middleware) |
+| `NEXT_PUBLIC_API_BASE_URL` | Base URL of the backend API (e.g. `http://localhost:8000`) |
 
-## Learn More
+## Scripts
 
-To learn more about Next.js, take a look at the following resources:
+| Command | Purpose |
+|---|---|
+| `npm run dev` | Start dev server |
+| `npm run build` | Production build |
+| `npm run start` | Serve a production build |
+| `npm run lint` | Lint |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Deployment
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Currently deployed on Railway, built via Nixpacks (`npm run build` / `npm run
+start`) — no Dockerfile needed. `NEXT_PUBLIC_*` variables must be set on the
+Railway service *before* the build runs, since Next.js inlines them at build time.
+Note the app listens on the port given by the `PORT` env var (`next start`
+defaults away from 3000 if Railway doesn't get `PORT` set explicitly).
